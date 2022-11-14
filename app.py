@@ -9,12 +9,12 @@ db = SQLAlchemy(app)
 
 class Todo(db.Model):
     sno = db.Column(db.Integer, primary_key=True)
-    Task = db.Column(db.String, nullable=False)
+    task = db.Column(db.String, nullable=False)
     desc = db.Column(db.String, nullable=False)
-    created = db.Column(db.DateTime, default=datetime.datetime.now())
+    created = db.Column(db.DateTime, default=datetime.datetime.today())
 
     def __repr__(self) -> str:
-        return f'{self.sno} - {self.Task}'
+        return f'{self.task} - {self.task}'
 
 context = app.app_context()
 
@@ -22,23 +22,35 @@ with context:
     db.create_all()
 
 @app.route("/", methods=['GET', 'POST'])
-def home():
+def create_read():
     if request.method == 'POST':
-        task = request.form['task']
-        desc = request.form['desc']
-        todo = Todo(Task=task, desc=desc)
-        db.session.add(todo)
-        db.session.commit() 
+        if(request.form['task']=="" and request.form['desc']==""):
+            return "please enter task"
+            
+        else:
+            task = request.form['task']
+            desc = request.form['desc']
+            todo = Todo(task=task, desc=desc)
+            db.session.add(todo)
+            db.session.commit() 
     allTodo = Todo.query.all()
     return render_template('index.html', allTodo = allTodo)
 
-@app.route("/update/<int:sno>")
+@app.route("/update/<int:sno>", methods=['GET', 'POST'])
 def update_todo(sno):
-    todo = Todo(Task="First Task", desc="Go to gym")
-    db.session.add(todo)
-    db.session.commit() 
-    allTodo = todo.query.all()
-    return render_template('index.html', allTodo = allTodo)
+    if request.method == 'POST':
+        task = request.form['task']
+        desc = request.form['desc']
+        todo = Todo.query.filter_by(sno=sno).first()
+        todo.task = task
+        todo.desc  = desc
+        db.session.add(todo)
+        db.session.commit() 
+        return redirect('/')
+
+    todo = Todo.query.filter_by(sno=sno).first()
+    return render_template('update.html',todo=todo)
+
 
 @app.route("/delete/<int:sno>")
 def delete_todo(sno):
